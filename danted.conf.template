@@ -1,21 +1,18 @@
 logoutput: stderr
 
 internal: 0.0.0.0 port = 1080
-external: eth0
+external: __EXTERNAL_IFACE__
 
-# Аутентификация
 socksmethod: username
 clientmethod: none
 
 user.notprivileged: dante
 
-# Кто может подключаться к прокси
 client pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
     log: connect disconnect error
 }
 
-# Куда прокси может ходить
 socks pass {
     from: 0.0.0.0/0 to: 0.0.0.0/0
     protocol: tcp
