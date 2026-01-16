@@ -9,19 +9,26 @@ if [ -z "$DANTE_USER" ] || [ -z "$DANTE_PASS" ]; then
 fi
 
 echo "Creating user..."
-adduser --disabled-password --gecos "" "$DANTE_USER"
+useradd -m -s /bin/bash "$DANTE_USER" || true
 echo "$DANTE_USER:$DANTE_PASS" | chpasswd
 id "$DANTE_USER"
 
 echo "Detecting outbound interface..."
-EXTERNAL_IFACE=$(ip route get 1.1.1.1 | awk '{print $5; exit}')
+# Try multiple methods to detect the external interface
+EXTERNAL_IFACE=$(ip route get 1.1.1.1 2>/dev/null | awk '{print $5; exit}')
 
+# Fallback: try to find the default interface
 if [ -z "$EXTERNAL_IFACE" ]; then
-  echo "ERROR: could not detect external interface"
-  exit 1
+  EXTERNAL_IFACE=$(ip route | grep default | awk '{print $5; exit}')
 fi
 
-echo "Using external interface: $EXTERNAL_IFACE"
+# Fallback: use eth0 as default for containers
+if [ -z "$EXTERNAL_IFACE" ]; then
+  EXTERNAL_IFACE="eth0"
+  echo "WARNING: Could not detect interface, using default: $EXTERNAL_IFACE"
+else
+  echo "Using external interface: $EXTERNAL_IFACE"
+fi
 
 sed "s/__EXTERNAL_IFACE__/$EXTERNAL_IFACE/" \
   /etc/danted.conf.template > /etc/danted.conf
@@ -30,4 +37,4 @@ echo "Final danted.conf:"
 cat /etc/danted.conf
 
 echo "Starting danted..."
-exec danted -f /etc/danted.conf -D
+exec danted -f /etc/danted.conf
