@@ -62,7 +62,7 @@ sleep 1
 
 # Verify danted config is valid
 echo "Validating danted configuration..."
-danted -f /etc/danted.conf -N 2>&1 || {
+danted -f /etc/danted.conf -V 2>&1 || {
   echo "ERROR: danted configuration validation failed!"
   exit 1
 }
