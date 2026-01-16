@@ -31,7 +31,16 @@ else
 fi
 
 # Use PORT environment variable for SOCKS proxy, or default to 1080
-SOCKS_PORT=${PORT:-1080}
+# On Render, PORT is usually set automatically, but we want to use 1080 for SOCKS
+# So we'll check if PORT is set and different from 1080, we'll use it
+# Otherwise default to 1080
+if [ -n "$PORT" ] && [ "$PORT" != "1080" ]; then
+  echo "WARNING: PORT is set to $PORT, but SOCKS proxy should use 1080"
+  echo "Consider setting PORT=1080 in Render settings, or use the port $PORT"
+  SOCKS_PORT=$PORT
+else
+  SOCKS_PORT=1080
+fi
 echo "Using SOCKS port: $SOCKS_PORT"
 
 # Replace placeholders in config
@@ -43,11 +52,27 @@ echo "Final danted.conf:"
 cat /etc/danted.conf
 
 # Start health check HTTP server in background on a different port
-# Use 8080 for health check, or 10000 if PORT is already used
+# Use 8080 for health check
 HEALTH_PORT=8080
 echo "Starting health check server on port $HEALTH_PORT..."
 python3 /healthcheck.py $HEALTH_PORT > /dev/null 2>&1 &
 
+# Wait a moment for health check to start
+sleep 1
+
+# Verify danted config is valid
+echo "Validating danted configuration..."
+danted -f /etc/danted.conf -N 2>&1 || {
+  echo "ERROR: danted configuration validation failed!"
+  exit 1
+}
+
+# Check if danted process will start
+echo "Starting danted on port $SOCKS_PORT..."
+echo "Configuration summary:"
+echo "  - SOCKS port: $SOCKS_PORT"
+echo "  - External interface: $EXTERNAL_IFACE"
+echo "  - User: $DANTE_USER"
+
 # Start danted in foreground
-echo "Starting danted..."
 exec danted -f /etc/danted.conf
