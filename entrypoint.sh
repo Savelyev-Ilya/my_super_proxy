@@ -36,5 +36,11 @@ sed "s/__EXTERNAL_IFACE__/$EXTERNAL_IFACE/" \
 echo "Final danted.conf:"
 cat /etc/danted.conf
 
+# Start health check HTTP server in background
+HEALTH_PORT=${PORT:-8080}
+echo "Starting health check server on port $HEALTH_PORT..."
+python3 /healthcheck.py $HEALTH_PORT > /dev/null 2>&1 &
+
+# Start danted in foreground
 echo "Starting danted..."
 exec danted -f /etc/danted.conf
