@@ -30,14 +30,21 @@ else
   echo "Using external interface: $EXTERNAL_IFACE"
 fi
 
-sed "s/__EXTERNAL_IFACE__/$EXTERNAL_IFACE/" \
+# Use PORT environment variable for SOCKS proxy, or default to 1080
+SOCKS_PORT=${PORT:-1080}
+echo "Using SOCKS port: $SOCKS_PORT"
+
+# Replace placeholders in config
+sed -e "s/__EXTERNAL_IFACE__/$EXTERNAL_IFACE/" \
+    -e "s/port = 1080/port = $SOCKS_PORT/" \
   /etc/danted.conf.template > /etc/danted.conf
 
 echo "Final danted.conf:"
 cat /etc/danted.conf
 
-# Start health check HTTP server in background
-HEALTH_PORT=${PORT:-8080}
+# Start health check HTTP server in background on a different port
+# Use 8080 for health check, or 10000 if PORT is already used
+HEALTH_PORT=8080
 echo "Starting health check server on port $HEALTH_PORT..."
 python3 /healthcheck.py $HEALTH_PORT > /dev/null 2>&1 &
 

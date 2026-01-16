@@ -16,6 +16,7 @@ COPY entrypoint.sh /entrypoint.sh
 COPY healthcheck.py /healthcheck.py
 RUN chmod +x /entrypoint.sh /healthcheck.py
 
-EXPOSE 1080 8080
+EXPOSE 1080
+ENV PORT=1080
 
 CMD ["/entrypoint.sh"]
